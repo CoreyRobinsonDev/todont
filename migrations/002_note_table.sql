@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS "note" (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     completed_at TIMESTAMP WITH TIME ZONE,
-    FOREIGN KEY (user_id) REFERENCES user(id)
+    FOREIGN KEY (user_id) REFERENCES t_user(id)
 );

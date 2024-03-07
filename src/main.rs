@@ -18,7 +18,7 @@ async fn main(
         .map_err(shuttle_runtime::CustomError::new)?;
 
     let mut router = Router::new()
-        .route("/", get(hello_world))
+        .route("/api", get(hello_world))
         .with_state(TodontDB { pool })
         .nest_service("/", tower_http::services::ServeDir::new("frontend"));
 
