@@ -5,7 +5,8 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
-    LoginFail,
+    Login,
+    Sys
 }
 
 impl IntoResponse for Error {
@@ -13,7 +14,7 @@ impl IntoResponse for Error {
         println!("->> {:<12} - {self:?}", "INTO_RES");
 
         return match self {
-            Self::LoginFail => (StatusCode::UNAUTHORIZED, "LOGIN_FAIL").into_response(),
+            Self::Login => (StatusCode::UNAUTHORIZED, "LOGIN_FAIL").into_response(),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "UNHANDLED_CLIENT_ERROR")
             .into_response()
         }
