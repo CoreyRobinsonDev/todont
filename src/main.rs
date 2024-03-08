@@ -1,9 +1,9 @@
-mod routes;
+mod models;
+mod api;
+mod error;
 
-use axum::{routing::get, Router};
+use axum::{Router, routing::post};
 use sqlx::PgPool;
-
-use crate::routes::*;
 
 
 #[shuttle_runtime::main]
@@ -18,8 +18,9 @@ async fn main(
         .map_err(shuttle_runtime::CustomError::new)?;
 
     let mut router = Router::new()
-        .route("/api", get(hello_world))
+        .route("/api/user/login", post(api::user::login))
         .with_state(TodontDB { pool })
+        .layer(tower_cookies::CookieManagerLayer::new())
         .nest_service("/", tower_http::services::ServeDir::new("frontend"));
 
     // Live reload the frontend during development
@@ -31,6 +32,6 @@ async fn main(
 }
 
 #[derive(Clone)]
-struct TodontDB {
+pub struct TodontDB {
     pool: PgPool
 }
