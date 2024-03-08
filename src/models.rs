@@ -5,7 +5,7 @@ use chrono::Utc;
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct User {
-    pub id: String,
+    pub id: sqlx::types::Uuid,
     pub email: String,
     pub password: String,
     pub created_at: chrono::DateTime<Utc>,

@@ -21,14 +21,16 @@ pub async fn log_in(
     let Ok(user) = sqlx::query_as::<_, User>("
         SELECT * FROM t_user
         WHERE email = $1
-        AND password = $2
     ")
         .bind(&payload.email)
-        .bind(&payload.password)
         .fetch_one(&state.pool)
         .await else { return Err(Error::Login); };
 
-    cookies.add(Cookie::new(api::AUTH_TOKEN, "user-1.exp.sign"));
+    if !bcrypt::verify(&payload.password, &user.password) {
+        return Err(Error::Login); 
+    }
+
+    cookies.add(Cookie::new(api::AUTH_TOKEN, bcrypt::hash(user.id).unwrap()));
 
     return Ok((StatusCode::OK, Json(user)));
 }
@@ -46,9 +48,7 @@ pub async fn sign_in(
         return Err(Error::Login);
     } else if !re.is_match(&payload.email) {
         return Err(Error::Login);
-    }
-
-    if let Ok(_) = sqlx::query("
+    } else if let Ok(_) = sqlx::query("
         SELECT * FROM t_user
         WHERE email = $1
     ")
