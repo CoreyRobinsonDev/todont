@@ -3,7 +3,7 @@ use pwhash::bcrypt;
 use regex::Regex;
 use axum::{
     Json, 
-    http::StatusCode, response::IntoResponse, extract::State,
+    http::StatusCode, response::IntoResponse, extract::State, debug_handler,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -11,8 +11,7 @@ use sqlx::PgPool;
 use tower_cookies::{Cookies, Cookie};
 use uuid::Uuid;
 
-use crate::{error::{Result, Error}, api, models::{User, self, Session}, TodontDB};
-
+use crate::{error::{Result, Error}, api, models::{User, Session}, TodontDB};
 
 pub async fn log_in(
     cookies: Cookies, 
@@ -44,6 +43,22 @@ pub async fn log_in(
     }))));
 }
 
+pub async fn log_out(
+    cookies: Cookies,
+    State(state): State<TodontDB>,
+) -> Result<impl IntoResponse> {
+    println!("->> {:<12} - log_out", "HANDLER");
+
+    if remove_session(cookies, &state.pool).await.is_none() {
+        return Err(Error::Login);
+    };
+
+    return Ok((StatusCode::OK, Json(json!({
+        "success": true,
+        "message": ""
+    }))))
+}
+
 pub async fn sign_in(
     cookies: Cookies,
     State(state): State<TodontDB>,
@@ -67,6 +82,10 @@ pub async fn sign_in(
 
     let id = uuid::Uuid::new_v4();
 
+    if create_session(id, cookies, &state.pool).await.is_none() {
+        return Err(Error::Login);
+    }
+
     match sqlx::query("
         INSERT INTO t_user
         (id, email, password)
@@ -76,19 +95,11 @@ pub async fn sign_in(
         .bind(bcrypt::hash(&payload.password).unwrap())
         .execute(&state.pool)
         .await { 
-            Ok(_) => {
-                if create_session(id, cookies, &state.pool).await.is_none() {
-                    return Err(Error::Login);
-                }
-                return Ok((StatusCode::CREATED, Json(json!({
+            Ok(_) => return Ok((StatusCode::CREATED, Json(json!({
                     "success": true,
                     "message": id
-                }))))
-            }
-            Err(e) => {
-                println!("{e}");
-                return Err(Error::Sys);
-            }
+                })))),
+            Err(e) => return Err(Error::Sys)
         };
 }
 
@@ -121,8 +132,31 @@ async fn create_session(
     return Some(id);
 }
 
-async fn remove_session(user_id: Uuid, cookies: Cookies) -> Option<String> {
-    return Some(String::new());
+async fn remove_session(
+    cookies: Cookies, 
+    pool: &PgPool
+) -> Option<i32> {
+    let Some(cookie) = cookies.get(api::AUTH_TOKEN) else {
+        return None;
+    };
+
+    let id: i32 = BASE64_STANDARD.decode(cookie.value())
+        .unwrap()
+        .iter()
+        .map(|num| *num as i32)
+        .sum();
+
+    cookies.remove(Cookie::from(api::AUTH_TOKEN));
+
+    match sqlx::query("
+        DELETE FROM session
+        WHERE id = $1")
+        .bind(id)
+        .execute(pool)
+        .await {
+            Ok(_) => return Some(id),
+            Err(_) => return None
+        }
 }
 
 #[derive(Debug, Deserialize)]

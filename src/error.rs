@@ -11,7 +11,7 @@ pub enum Error {
 
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
-        println!("->> {:<12} - {self:?}", "ERROR");
+        println!("->>> {:<12} - {self:?}", "ERROR");
 
         return match self {
             Self::Login => (StatusCode::UNAUTHORIZED, "LOGIN_FAIL").into_response(),
