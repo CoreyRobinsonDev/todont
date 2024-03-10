@@ -20,7 +20,7 @@ async fn main(
     let mut router = Router::new()
         .route("/api/user/log_in", post(api::user::log_in))
         .route("/api/user/log_out", post(api::user::log_out))
-        .route("/api/user/sign_in", post(api::user::sign_in))
+        .route("/api/user/create_account", post(api::user::create_account))
         .with_state(TodontDB { pool })
         .layer(tower_cookies::CookieManagerLayer::new())
         .nest_service("/", tower_http::services::ServeDir::new("frontend"));

@@ -3,7 +3,7 @@ use pwhash::bcrypt;
 use regex::Regex;
 use axum::{
     Json, 
-    http::StatusCode, response::IntoResponse, extract::State, debug_handler,
+    http::StatusCode, response::IntoResponse, extract::State,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -11,7 +11,7 @@ use sqlx::PgPool;
 use tower_cookies::{Cookies, Cookie};
 use uuid::Uuid;
 
-use crate::{error::{Result, Error}, api, models::{User, Session}, TodontDB};
+use crate::{error::{Result, Error, Auth}, api, models::{User, Session}, TodontDB};
 
 pub async fn log_in(
     cookies: Cookies, 
@@ -27,14 +27,14 @@ pub async fn log_in(
     ")
         .bind(&payload.email)
         .fetch_one(&state.pool)
-        .await else { return Err(Error::Login); };
+        .await else { return Err(Error::Auth(Auth::Email)); };
 
     if !bcrypt::verify(&payload.password, &user.password) {
-        return Err(Error::Login); 
+        return Err(Error::Auth(Auth::Password)); 
     }
 
     if create_session(user.id, cookies, &state.pool).await.is_none() {
-        return Err(Error::Login);
+        return Err(Error::Auth(Auth::Session));
     }
 
     return Ok((StatusCode::OK, Json(json!({
@@ -50,7 +50,7 @@ pub async fn log_out(
     println!("->> {:<12} - log_out", "HANDLER");
 
     if remove_session(cookies, &state.pool).await.is_none() {
-        return Err(Error::Login);
+        return Err(Error::Auth(Auth::Session));
     };
 
     return Ok((StatusCode::OK, Json(json!({
@@ -59,7 +59,7 @@ pub async fn log_out(
     }))))
 }
 
-pub async fn sign_in(
+pub async fn create_account (
     cookies: Cookies,
     State(state): State<TodontDB>,
     payload: Json<SignInPayload>
@@ -69,21 +69,21 @@ pub async fn sign_in(
     let re = Regex::new(r"^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$").unwrap();
 
     if payload.password != payload.confirm_password {
-        return Err(Error::Login);
+        return Err(Error::Auth(Auth::Password));
     } else if !re.is_match(&payload.email) {
-        return Err(Error::Login);
+        return Err(Error::Auth(Auth::Email));
     } else if let Ok(_) = sqlx::query("
         SELECT * FROM t_user
         WHERE email = $1
     ")
         .bind(&payload.email)
         .fetch_one(&state.pool)
-        .await { return Err(Error::Login) };
+        .await { return Err(Error::Auth(Auth::General)) };
 
     let id = uuid::Uuid::new_v4();
 
     if create_session(id, cookies, &state.pool).await.is_none() {
-        return Err(Error::Login);
+        return Err(Error::Auth(Auth::Session));
     }
 
     match sqlx::query("
@@ -99,7 +99,7 @@ pub async fn sign_in(
                     "success": true,
                     "message": id
                 })))),
-            Err(e) => return Err(Error::Sys)
+            Err(_) => return Err(Error::Sys)
         };
 }
 
