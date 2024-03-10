@@ -33,6 +33,7 @@ async fn main(
     Ok(router.into())
 }
 
+
 #[derive(Clone)]
 pub struct TodontDB {
     pool: PgPool

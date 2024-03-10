@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS t_user;
-
 CREATE TABLE IF NOT EXISTS t_user (
     id UUID PRIMARY KEY,
     email TEXT NOT NULL,

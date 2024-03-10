@@ -22,6 +22,6 @@ pub struct UserNew {
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct Session {
-    pub id: i32,
+    pub id: sqlx::types::Uuid,
     pub user_id: sqlx::types::Uuid
 }

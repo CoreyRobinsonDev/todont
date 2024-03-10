@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS "note";
-
 CREATE TABLE IF NOT EXISTS "note" (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL,
