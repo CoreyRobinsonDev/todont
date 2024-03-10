@@ -19,3 +19,9 @@ pub struct UserNew {
     pub created_at: chrono::DateTime<Utc>,
     pub updated_at: chrono::DateTime<Utc>
 }
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct Session {
+    pub id: i32,
+    pub user_id: sqlx::types::Uuid
+}

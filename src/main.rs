@@ -18,8 +18,8 @@ async fn main(
         .map_err(shuttle_runtime::CustomError::new)?;
 
     let mut router = Router::new()
-        .route("/api/user/login", post(api::user::log_in))
-        .route("/api/user/signin", post(api::user::sign_in))
+        .route("/api/user/log_in", post(api::user::log_in))
+        .route("/api/user/sign_in", post(api::user::sign_in))
         .with_state(TodontDB { pool })
         .layer(tower_cookies::CookieManagerLayer::new())
         .nest_service("/", tower_http::services::ServeDir::new("frontend"));

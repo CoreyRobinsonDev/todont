@@ -1,3 +1,4 @@
+use base64::prelude::*;
 use pwhash::bcrypt;
 use regex::Regex;
 use axum::{
@@ -6,9 +7,11 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::json;
+use sqlx::PgPool;
 use tower_cookies::{Cookies, Cookie};
+use uuid::Uuid;
 
-use crate::{error::{Result, Error}, api, models::User, TodontDB};
+use crate::{error::{Result, Error}, api, models::{User, self, Session}, TodontDB};
 
 
 pub async fn log_in(
@@ -17,6 +20,7 @@ pub async fn log_in(
     payload: Json<LoginPayload>, 
 ) -> Result<impl IntoResponse> {
     println!("->> {:<12} - log_in", "HANDLER");
+
 
     let Ok(user) = sqlx::query_as::<_, User>("
         SELECT * FROM t_user
@@ -30,9 +34,14 @@ pub async fn log_in(
         return Err(Error::Login); 
     }
 
-    cookies.add(Cookie::new(api::AUTH_TOKEN, bcrypt::hash(user.id).unwrap()));
+    if create_session(user.id, cookies, &state.pool).await.is_none() {
+        return Err(Error::Login);
+    }
 
-    return Ok((StatusCode::OK, Json(user)));
+    return Ok((StatusCode::OK, Json(json!({
+        "success": true,
+        "message": user.id
+    }))));
 }
 
 pub async fn sign_in(
@@ -68,7 +77,9 @@ pub async fn sign_in(
         .execute(&state.pool)
         .await { 
             Ok(_) => {
-                cookies.add(Cookie::new(api::AUTH_TOKEN, bcrypt::hash(id).unwrap()));
+                if create_session(id, cookies, &state.pool).await.is_none() {
+                    return Err(Error::Login);
+                }
                 return Ok((StatusCode::CREATED, Json(json!({
                     "success": true,
                     "message": id
@@ -81,6 +92,38 @@ pub async fn sign_in(
         };
 }
 
+
+async fn create_session(
+    user_id: Uuid, 
+    cookies: Cookies, 
+    pool: &PgPool
+) -> Option<String> {
+    let session: Session;
+
+    if cookies.get(api::AUTH_TOKEN).is_some() {
+        return None;
+    }
+
+    match sqlx::query_as::<_, Session>("
+        INSERT INTO session
+        (user_id)
+        VALUES ($1) 
+        RETURNING id, user_id")
+        .bind(&user_id)
+        .fetch_one(pool)
+        .await {
+            Ok(s) =>  session = s,
+            Err(_) => return None
+        }
+    let id = BASE64_STANDARD.encode(session.id.to_be_bytes());
+    cookies.add(Cookie::new(api::AUTH_TOKEN, id.clone()));
+    
+    return Some(id);
+}
+
+async fn remove_session(user_id: Uuid, cookies: Cookies) -> Option<String> {
+    return Some(String::new());
+}
 
 #[derive(Debug, Deserialize)]
 pub struct LoginPayload {
