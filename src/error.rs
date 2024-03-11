@@ -7,6 +7,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Debug)]
 pub enum Error {
     Auth(Auth),
+    Client,
     Sys
 }
 
@@ -38,6 +39,10 @@ impl IntoResponse for Error {
             Self::Auth(Auth::General) => (StatusCode::UNAUTHORIZED, Json(json!({
                 "success": false,
                 "message": "AUTH: Error"
+            }))).into_response(),
+            Self::Client => (StatusCode::BAD_REQUEST, Json(json!({
+                "success": false,
+                "message": "CLIENT: Bad request"
             }))).into_response(),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
                 "success": false,

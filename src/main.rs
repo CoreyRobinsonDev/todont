@@ -2,7 +2,7 @@ mod models;
 mod api;
 mod error;
 
-use axum::{Router, routing::post};
+use axum::{Router, routing::post, debug_handler};
 use sqlx::PgPool;
 
 
@@ -18,9 +18,10 @@ async fn main(
         .map_err(shuttle_runtime::CustomError::new)?;
 
     let mut router = Router::new()
-        .route("/api/user/log_in", post(api::user::log_in))
-        .route("/api/user/log_out", post(api::user::log_out))
-        .route("/api/user/create_account", post(api::user::create_account))
+        .route("/api/users/log_in", post(api::user::log_in))
+        .route("/api/users/log_out", post(api::user::log_out))
+        .route("/api/users", post(api::user::create_account))
+        .route("/api/notes", post(api::note::create_note))
         .with_state(TodontDB { pool })
         .layer(tower_cookies::CookieManagerLayer::new())
         .nest_service("/", tower_http::services::ServeDir::new("frontend"));

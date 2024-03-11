@@ -2,7 +2,7 @@ use pwhash::bcrypt;
 use regex::Regex;
 use axum::{
     Json, 
-    http::StatusCode, response::IntoResponse, extract::State,
+    http::StatusCode, response::IntoResponse, extract::State, debug_handler,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -10,7 +10,7 @@ use sqlx::PgPool;
 use tower_cookies::{Cookies, Cookie};
 use uuid::Uuid;
 
-use crate::{error::{Result, Error, Auth}, api, models::{User, Session}, TodontDB};
+use crate::{error::{Result, Error, Auth}, api, models::User, TodontDB};
 
 pub async fn log_in(
     cookies: Cookies, 
@@ -30,11 +30,10 @@ pub async fn log_in(
 
     if !bcrypt::verify(&payload.password, &user.password) {
         return Err(Error::Auth(Auth::Password)); 
-    }
-
-    if create_session(user.id, cookies, &state.pool).await.is_none() {
+    } else if create_session(user.id, &cookies, &state.pool).await.is_none() {
         return Err(Error::Auth(Auth::Session));
     }
+
 
     return Ok((StatusCode::OK, Json(json!({
         "success": true,
@@ -42,15 +41,31 @@ pub async fn log_in(
     }))));
 }
 
+#[debug_handler]
 pub async fn log_out(
     cookies: Cookies,
     State(state): State<TodontDB>,
 ) -> Result<impl IntoResponse> {
     println!("->> {:<12} - log_out", "HANDLER");
 
-    let Some(id) = remove_session(cookies, &state.pool).await else {
+    let Some(cookie) = cookies.get(api::AUTH_TOKEN) else {
         return Err(Error::Auth(Auth::Session));
     };
+
+    let Ok(id) = uuid::Uuid::parse_str(&cookie.value()) else {
+        return Err(Error::Sys);
+    };
+
+    let mut cookie = Cookie::new(api::AUTH_TOKEN, "");
+    cookie.set_path("/");
+    cookies.remove(cookie);
+
+    let _ = sqlx::query("
+        DELETE FROM session
+        WHERE id = $1")
+        .bind(&id)
+        .execute(&state.pool)
+        .await;
 
     return Ok((StatusCode::OK, Json(json!({
         "success": true,
@@ -102,7 +117,7 @@ pub async fn create_account (
 
 async fn create_session(
     user_id: Uuid, 
-    cookies: Cookies, 
+    cookies: &Cookies, 
     pool: &PgPool
 ) -> Option<String> {
     if cookies.get(api::AUTH_TOKEN).is_some() {
@@ -111,27 +126,25 @@ async fn create_session(
 
     let id = uuid::Uuid::new_v4();
 
-    match sqlx::query_as::<_, Session>("
+    match sqlx::query("
         INSERT INTO session
         (id, user_id)
-        VALUES ($1, $2) 
-        RETURNING id, user_id")
+        VALUES ($1, $2)")
         .bind(&id)
         .bind(&user_id)
-        .fetch_one(pool)
+        .execute(pool)
         .await {
             Ok(_) => {
-                cookies.add(Cookie::new(api::AUTH_TOKEN, id.to_string()));
+                let mut cookie = Cookie::new(api::AUTH_TOKEN, id.to_string());
+                cookie.set_path("/");
+                cookies.add(cookie);
                 return Some(id.to_string());
             }
             Err(_) => return None
         }
 }
 
-async fn remove_session(
-    cookies: Cookies, 
-    pool: &PgPool
-) -> Option<String> {
+pub async fn get_user(cookies: &Cookies, pool: &PgPool) -> Option<User> {
     let Some(cookie) = cookies.get(api::AUTH_TOKEN) else {
         return None;
     };
@@ -140,15 +153,16 @@ async fn remove_session(
         return None;
     };
 
-    cookies.remove(Cookie::from(api::AUTH_TOKEN));
-
-    match sqlx::query("
-        DELETE FROM session
-        WHERE id = $1")
+    match sqlx::query_as::<_, User>("
+        SELECT * FROM t_user
+        WHERE id = (
+            SELECT user_id FROM session
+            WHERE id = $1
+        )")
         .bind(&id)
-        .execute(pool)
+        .fetch_one(pool)
         .await {
-            Ok(_) => return Some(id.to_string()),
+            Ok(user) => return Some(user),
             Err(_) => return None
         }
 }
