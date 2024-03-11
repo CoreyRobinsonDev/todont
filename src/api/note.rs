@@ -7,6 +7,7 @@ use tower_cookies::Cookies;
 
 use crate::TodontDB;
 use crate::error::{Result, Error, Auth};
+use crate::models::Note;
 
 use super::user::get_user;
 
@@ -39,6 +40,31 @@ pub async fn create_note(
     return Ok((StatusCode::CREATED, Json(json!({
         "success": true,
         "message": row.id.to_string()
+    }))))
+}
+
+pub async fn get_notes(
+    cookies: Cookies,
+    State(state): State<TodontDB>
+) -> Result<impl IntoResponse> {
+    println!("->> {:<12} - get_notes", "HANDLER");
+
+    let Some(user) = get_user(&cookies, &state.pool).await else {
+        return Err(Error::Auth(Auth::Session));
+    };
+
+    let Ok(notes) = sqlx::query_as::<_, Note>("
+        SELECT * FROM note
+        WHERE user_id = $1")
+        .bind(&user.id)
+        .fetch_all(&state.pool)
+        .await else {
+            return Err(Error::Sys);
+        };
+
+    return Ok((StatusCode::CREATED, Json(json!({
+        "success": true,
+        "message": notes
     }))))
 }
 
