@@ -23,6 +23,7 @@ async fn main(
         .route("/api/users", post(api::user::create_account))
         .route("/api/notes", post(api::note::create_note))
         .route("/api/notes", get(api::note::get_notes))
+        .route("/api/notes/:id", get(api::note::get_note))
         .route("/api/notes/:id", put(api::note::update_note))
         .with_state(TodontDB { pool })
         .layer(tower_cookies::CookieManagerLayer::new())

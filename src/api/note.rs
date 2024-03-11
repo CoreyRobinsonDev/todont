@@ -70,6 +70,35 @@ pub async fn get_notes(
     }))))
 }
 
+pub async fn get_note(
+    cookies: Cookies,
+    State(state): State<TodontDB>,
+    Path(id): Path<i32>,
+) -> Result<impl IntoResponse> {
+    println!("->> {:<12} - get_note", "HANDLER");
+
+    let Some(user) = get_user(&cookies, &state.pool).await else {
+        return Err(Error::Auth(Auth::Session));
+    };
+
+
+    let Ok(note) = sqlx::query_as::<_,Note>("
+        SELECT * FROM note
+        WHERE user_id = $1
+        AND id = $2")
+        .bind(&user.id)
+        .bind(&id)
+        .fetch_one(&state.pool)
+        .await else {
+            return Err(Error::Client);
+        };
+
+    return Ok((StatusCode::CREATED, Json(json!({
+        "success": true,
+        "message": note
+    }))))
+}
+
 pub async fn update_note(
     cookies: Cookies,
     State(state): State<TodontDB>,
