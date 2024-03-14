@@ -28,7 +28,7 @@ async fn main(
         .route("/api/notes/:id", delete(api::note::delete_note))
         .with_state(TodontDB { pool })
         .layer(tower_cookies::CookieManagerLayer::new())
-        .nest_service("/", tower_http::services::ServeDir::new("frontend"));
+        .nest_service("/", tower_http::services::ServeDir::new("frontend/dist"));
 
     // Live reload the frontend during development
     if cfg!(debug_assertions) {
