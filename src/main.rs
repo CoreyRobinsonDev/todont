@@ -2,7 +2,7 @@ mod models;
 mod api;
 mod error;
 
-use axum::{Router, routing::{post, get, put}};
+use axum::{Router, routing::{post, get, put, delete}};
 use sqlx::PgPool;
 
 
@@ -25,6 +25,7 @@ async fn main(
         .route("/api/notes", get(api::note::get_notes))
         .route("/api/notes/:id", get(api::note::get_note))
         .route("/api/notes/:id", put(api::note::update_note))
+        .route("/api/notes/:id", delete(api::note::delete_note))
         .with_state(TodontDB { pool })
         .layer(tower_cookies::CookieManagerLayer::new())
         .nest_service("/", tower_http::services::ServeDir::new("frontend"));

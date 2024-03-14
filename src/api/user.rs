@@ -41,7 +41,6 @@ pub async fn log_in(
     }))));
 }
 
-#[debug_handler]
 pub async fn log_out(
     cookies: Cookies,
     State(state): State<TodontDB>,

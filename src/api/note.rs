@@ -27,13 +27,14 @@ pub async fn create_note(
 
     let Ok(id) = sqlx::query_as::<_, NoteId>("
         INSERT INTO note
-        (user_id, title, description, completed)
-        VALUES ($1, $2, $3, $4)
+        (user_id, title, description, completed, created_at)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id")
         .bind(&user.id)
         .bind(&payload.title)
         .bind(&payload.description)
         .bind(&payload.completed)
+        .bind(chrono::Utc::now())
         .fetch_one(&state.pool)
         .await else {
             return Err(Error::Sys);
@@ -115,15 +116,47 @@ pub async fn update_note(
         UPDATE note
         SET title = $1,
         description = $2,
-        updated_at = $3
-        WHERE user_id = $4
-        AND id = $5
-        RETURNING id")
+        completed = $3,
+        updated_at = $4
+        WHERE user_id = $5
+        AND id = $6
+        RETURNING id") // RETURNING used to throw error on wrong id
         .bind(&payload.title)
         .bind(&payload.description)
+        .bind(&payload.completed)
         .bind(chrono::Utc::now())
         .bind(&user.id)
         .bind(&id)
+        .fetch_one(&state.pool)
+        .await else {
+            return Err(Error::Client);
+        };
+
+
+    return Ok((StatusCode::CREATED, Json(json!({
+        "success": true,
+        "message": id.to_string()
+    }))))
+}
+
+pub async fn delete_note(
+    cookies: Cookies,
+    State(state): State<TodontDB>,
+    Path(id): Path<i32>
+) -> Result<impl IntoResponse> {
+    println!("->> {:<12} - delete_note", "HANDLER");
+
+    let Some(user) = get_user(&cookies, &state.pool).await else {
+        return Err(Error::Auth(Auth::Session));
+    };
+
+    let Ok(_) = sqlx::query("
+        DELETE FROM note
+        WHERE id = $1
+        AND user_id = $2
+        RETURNING id") // RETURNING used to throw error on wrong id
+        .bind(&id)
+        .bind(&user.id)
         .fetch_one(&state.pool)
         .await else {
             return Err(Error::Client);
