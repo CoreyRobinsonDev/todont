@@ -2,7 +2,7 @@ use pwhash::bcrypt;
 use regex::Regex;
 use axum::{
     Json, 
-    http::StatusCode, response::IntoResponse, extract::State, debug_handler,
+    http::StatusCode, response::IntoResponse, extract::State,
 };
 use serde::Deserialize;
 use serde_json::json;

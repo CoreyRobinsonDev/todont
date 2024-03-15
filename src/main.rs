@@ -32,6 +32,11 @@ async fn main(
 
     // Live reload the frontend during development
     if cfg!(debug_assertions) {
+        let mut bun = std::process::Command::new("bun");
+
+        bun.current_dir("frontend");
+        bun.arg("run").arg("build");
+        bun.status().expect("Error on frontend rebuild");
         router = router.layer(tower_livereload::LiveReloadLayer::new());
     }
 
@@ -43,3 +48,4 @@ async fn main(
 pub struct TodontDB {
     pool: PgPool
 }
+

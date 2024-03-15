@@ -1,0 +1,17 @@
+.main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    width: fit-content;
+    padding: 1rem;
+    border: 1px solid var(--text);
+    border-radius: var(--border);
+    box-shadow: -5px 5px 0 0 var(--text) ;
+}
+
+.blank {
+    align-self: center;
+    background-color: var(--text);
+    border-radius: var(--border);
+    height: 70%;
+}
