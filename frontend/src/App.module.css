@@ -1,2 +1,5 @@
-.main {
+.parent {
+    display: grid;
+    grid-template-columns: 10% 90%;
+    width: 100vw;
 }

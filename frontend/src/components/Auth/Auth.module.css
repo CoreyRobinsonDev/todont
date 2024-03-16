@@ -1,0 +1,116 @@
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.create_account_container,
+.login_container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid var(--text);
+    border-radius: var(--border);
+    padding: 4rem;
+}
+
+.input {
+    position: relative;
+    background-color: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--text);
+    border-radius: var(--border);
+    padding: 1rem;
+    width: 25rem;
+}
+
+.input > input {
+    background-color: transparent;
+    color: var(--text);
+    outline: none;
+}
+
+
+.input:has(input:focus) {
+    outline: 1px solid var(--text);
+}
+
+.placeholder {
+    position: absolute;
+    background-color: var(--bg);
+    bottom: 33%;
+    left: 1ch;
+    opacity: 50%;
+    width: fit-content;
+    height: fit-content;
+    user-select: none;
+}
+
+input:focus ~ .placeholder, 
+input:not(:placeholder-shown) ~ .placeholder {
+    top: -24%;
+    left: 2ch;
+    z-index: 2;
+    opacity: 100%;
+    font-size: 1.2rem;
+    color: var(--secondary);
+    padding: 0 3px;
+}
+
+.email {
+    text-align: center;
+    overflow-x: hidden;
+    line-height: 5rem;
+    font-weight: bold;
+    font-size: 8rem;
+    padding-bottom: 3rem;
+    padding-left: 4rem;
+    border-bottom: 1px solid var(--text);
+    width: 100%;
+}
+
+.button {
+    color: var(--text);
+    cursor: pointer;
+    width: 100%;
+    margin-top: 3rem;
+    outline: none;
+    --b:1px;   /* border length*/
+    --c:6px;  /* the cube perspective */
+
+    --g:calc(var(--c)*0.707); /* 0.707 = cos(45deg) = sin(45deg) */
+
+    transition: 0.5s;
+    border: solid var(--secondary);
+    border-width:var(--b) var(--b) calc(var(--c) + var(--b)) calc(var(--c) + var(--b));
+    background:
+    linear-gradient(-45deg,transparent var(--g),rgba(255,255,255,0.6) 0) left  /var(--c) 100%,
+    linear-gradient(135deg,transparent var(--g),rgba(255,255,255,0.3) 0) bottom /100% var(--c),
+    conic-gradient(from -90deg at top var(--b)   right var(--b),currentColor 270deg,transparent 0),
+    conic-gradient(from  90deg at bottom calc(var(--c) + var(--b)) left calc(var(--c) + var(--b)),currentColor 270deg,transparent 0) ;
+    background-repeat:no-repeat;
+    background-origin:border-box;
+    transform:translate(calc(var(--c)/-1),calc(var(--c)/1));
+    clip-path: 
+    polygon(var(--c) 0%, var(--c) 0%, 
+    100% 0%, 
+    100% calc(100% - var(--c)),100% calc(100% - var(--c)),
+    var(--c) calc(100% - var(--c)),
+    var(--c) calc(100% - var(--c)));
+}
+
+.button:hover,
+.button:focus {
+    color: var(--text);
+    transition:0.3s 0.3s,background-color 0.3s,color 0.3s;
+    background-color: var(--secondary);
+    transform:translate(0,0);
+    clip-path: 
+    polygon(0% var(--c), var(--c) 0%, 
+    100% 0%, 
+    100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 
+    0% 100%,0% 100%);
+}
+

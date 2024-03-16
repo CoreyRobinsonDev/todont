@@ -2,11 +2,13 @@ import { useState } from "react";
 
 import styles from "./Navbar.module.css";
 import Title from "../Title/Title";
-import Auth from "../Auth/Auth";
 
-export default function Navbar() {
-    const [section, setSection] = useState("NOTE");
-    const items = ["NOTE", "DONE", "YOU"];
+type Props = {
+    items: string[]
+    setSection: React.Dispatch<React.SetStateAction<string>>
+}
+export default function Navbar({ items, setSection }: Props) {
+    const [section, setLocalSection] = useState("YOU");
 
     return <nav className={styles.main}>
         <Title name={section} />
@@ -14,17 +16,15 @@ export default function Navbar() {
             {items.map((item, i) =>
                 <li tabIndex={0} 
                     key={`item-${i}`}
-                    onFocus={(e) => {
-                        [...e.currentTarget.parentElement!.children].forEach((child) => {
-                            child.classList.remove(styles.focus);
-                        })
-                        e.currentTarget.classList.add(styles.focus);
+                    className={`${styles.item} ${
+                        section === item ? styles.focus : ""
+                    }`}
+                    onClick={(e) => {
+                        setSection(e.currentTarget.innerText);
+                        setLocalSection(e.currentTarget.innerText);
                     }}
-                    className={styles.item}
-                    onClick={(e) => setSection(e.currentTarget.innerText)}
                 >{item}</li>
             )}
         </ul>
-        <Auth/>
     </nav>
 }

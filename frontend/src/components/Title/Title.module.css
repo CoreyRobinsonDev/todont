@@ -9,9 +9,13 @@
     box-shadow: -5px 5px 0 0 var(--text) ;
 }
 
+.letter {
+    justify-self: center;
+}
+
 .blank {
     align-self: center;
-    background-color: var(--text);
+    background-color: var(--secondary);
     border-radius: var(--border);
     height: 70%;
 }

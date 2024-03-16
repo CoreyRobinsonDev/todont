@@ -113,6 +113,22 @@ pub async fn create_account (
         };
 }
 
+pub async fn retrieve_user(
+    cookies: Cookies,
+    State(state): State<TodontDB>
+) -> Result<impl IntoResponse> {
+    println!("->> {:<12} - retrieve_user", "HANDLER");
+
+    let Some(user) = get_user(&cookies, &state.pool).await else {
+        return Err(Error::Auth(Auth::Session));
+    };
+
+    return Ok((StatusCode::CREATED, Json(json!({
+        "success": true,
+        "message": user
+    }))))
+}
+
 
 async fn create_session(
     user_id: Uuid, 
@@ -142,6 +158,7 @@ async fn create_session(
             Err(_) => return None
         }
 }
+
 
 pub async fn get_user(cookies: &Cookies, pool: &PgPool) -> Option<User> {
     let Some(cookie) = cookies.get(api::AUTH_TOKEN) else {

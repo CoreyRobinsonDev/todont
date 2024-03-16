@@ -21,6 +21,7 @@ async fn main(
         .route("/api/users/log_in", post(api::user::log_in))
         .route("/api/users/log_out", post(api::user::log_out))
         .route("/api/users", post(api::user::create_account))
+        .route("/api/user", get(api::user::retrieve_user))
         .route("/api/notes", post(api::note::create_note))
         .route("/api/notes", get(api::note::get_notes))
         .route("/api/notes/:id", get(api::note::get_note))

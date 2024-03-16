@@ -3,7 +3,7 @@
     flex-direction: column;
     align-items: center;
     gap: 3rem;
-    width: fit-content;
+    width: 100%;
     height: 100vh;
     padding: 3rem;
     border-right: 1px solid var(--text);
@@ -27,10 +27,11 @@
 }
 
 .item:hover::after, 
+.item:focus::after, 
 .focus::after {
     content: "";
     position: absolute;
-    right: -100%;
+    right: -130%;
     top: 50%;
     width: 6rem;
     border-bottom: 1px solid var(--text);

@@ -94,7 +94,8 @@ picture {
 /* Inherit fonts for inputs and buttons */
 input, button,
 textarea, select {
-  font: inherit;
+    font: inherit;
+    user-select: none;
 }
 
 /* Make sure textareas without a rows attribute are not tiny */
